@@ -1,0 +1,249 @@
+---
+title: "project2"
+output: 
+  pdf_document:
+    keep_md: true
+---
+# SEVERE WEATHER EVENTS and their impact in the US
+
+**For the course: Reproducable Data -- Project 2 -- Due Dec 21, 2014**
+
+## Synopsis
+
+## Processing
+
+**Load helpful libraries**
+
+```{r libraries}
+suppressWarnings(suppressMessages( library(knitr) ))
+#suppressWarnings(suppressMessages( library(lattice) ))
+suppressWarnings(suppressMessages( library(data.table) ))
+```
+
+
+**Get and read the file:**
+
+```{r get_data, cache=TRUE}
+data_path = "data"
+download_file = "storm-data.csv.bz2"
+download_file_path = file.path( data_path, download_file )
+url = "https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2"
+
+# create the data folfder if it doesnt exist
+if (!(file.exists( data_path ))) {
+  # "Data folder exists"
+  dir.create( data_path, showWarnings = FALSE )
+} 
+# download the file
+download.file(url, download_file_path, method="curl")
+
+# read the file
+# raw_data <- read.table(bzfile("storm-data.csv.bz2"), sep=",")
+raw_data <- read.table(bzfile( download_file_path ), sep=",", head=TRUE)
+events_dt   <- data.table(raw_data)
+```
+
+**Explore the impact of Sever Events on the population's health
+
+```{r population}
+
+# processing
+events_dt <- data.table(raw_data)
+# events are all over the place with lots of duplicates
+levels( events_dt$EVTYPE )
+# 
+data_rows <- nrow( events_dt)
+total <- 0
+# simplify datatypes
+events_dt$event_type <- as.character( events_dt$EVTYPE )
+# find freezing percipitation events
+events_dt$freezing <- grepl("freezing", events_dt$event_type, ignore.case=TRUE)
+events_dt$event_type[events_dt$freezing == TRUE] <- "freezing precipitation"
+round( sum(events_dt$freezing) / data_rows * 100, 2 ) 
+total = total + round( sum(events_dt$freezing) / data_rows * 100, 2 )
+total
+# find tornado events
+events_dt$tornado <- grepl("tornado", events_dt$event_type, ignore.case=TRUE)
+events_dt$event_type[events_dt$tornado == TRUE] <- "tornado"
+round( sum(events_dt$tornado)/data_rows*100, 2)
+total = total + round( sum(events_dt$tornado) / data_rows * 100, 2 )
+total
+# find heat events
+events_dt$heat <- grepl("heat", events_dt$event_type, ignore.case=TRUE)
+events_dt$event_type[events_dt$heat == TRUE] <- "heat"
+round( sum(events_dt$heat)/data_rows*100, 2)
+total = total + round( sum(events_dt$heat) / data_rows * 100, 2 )
+total
+# find flood events
+events_dt$flood <- grepl("flood", events_dt$event_type, ignore.case=TRUE)
+events_dt$event_type[events_dt$flood == TRUE] <- "flood"
+round( sum(events_dt$flood)/data_rows*100, 2)
+total = total + round( sum(events_dt$flood) / data_rows * 100, 2 )
+total
+# find lightning events
+events_dt$lightning <- grepl("lightning", events_dt$event_type, ignore.case=TRUE)
+events_dt$event_type[events_dt$lightning == TRUE] <- "lightning"
+round( sum(events_dt$lightning)/data_rows*100, 2)
+total = total + round( sum(events_dt$lightning) / data_rows * 100, 2 )
+total
+# find chill events
+events_dt$chill <- grepl("chill", events_dt$event_type, ignore.case=TRUE)
+events_dt$event_type[events_dt$chill == TRUE] <- "chill"
+round( sum(events_dt$chill)/data_rows*100, 2)
+total = total + round( sum(events_dt$chill) / data_rows * 100, 2 )
+total
+# find thunderstorm events
+events_dt$thunderstorm <- grepl("tstm", events_dt$event_type, ignore.case=TRUE)
+events_dt$thunderstorm <- grepl("thunderstorm", events_dt$event_type, ignore.case=TRUE)
+events_dt$event_type[events_dt$thunderstorm == TRUE] <- "thunderstorm"
+round( sum(events_dt$thunderstorm)/data_rows*100, 2)
+total = total + round( sum(events_dt$thunderstorm) / data_rows * 100, 2 )
+total
+# find wind events
+events_dt$wind <- grepl("wind", events_dt$event_type, ignore.case=TRUE)
+events_dt$event_type[events_dt$wind == TRUE] <- "wind"
+round( sum(events_dt$wind)/data_rows*100, 2)
+total = total + round( sum(events_dt$wind) / data_rows * 100, 2 )
+total
+# find Rip current events
+events_dt$rip <- grepl("rip", events_dt$event_type, ignore.case=TRUE)
+events_dt$event_type[events_dt$rip == TRUE] <- "rip"
+round( sum(events_dt$rip)/data_rows*100, 2)
+total = total + round( sum(events_dt$rip) / data_rows * 100, 2 )
+total
+# find avalanche events
+events_dt$avalanche <- grepl("avalanche", events_dt$event_type, ignore.case=TRUE)
+events_dt$event_type[events_dt$avalanche == TRUE] <- "avalanche"
+round( sum(events_dt$avalanche)/data_rows*100, 2)
+total = total + round( sum(events_dt$avalanche) / data_rows * 100, 2 )
+total
+# find slide events
+events_dt$slide <- grepl("slide", events_dt$event_type, ignore.case=TRUE)
+events_dt$event_type[events_dt$slide == TRUE] <- "landslide"
+round( sum(events_dt$slide)/data_rows*100, 2)
+total = total + round( sum(events_dt$slide) / data_rows * 100, 2 )
+total
+# find winter events
+events_dt$winter <- grepl("wintry", events_dt$event_type, ignore.case=TRUE)
+events_dt$winter <- grepl("winter", events_dt$event_type, ignore.case=TRUE)
+events_dt$winter <- grepl("blizzard", events_dt$event_type, ignore.case=TRUE)
+events_dt$event_type[events_dt$winter == TRUE] <- "winter storm"
+round( sum(events_dt$winter) / data_rows * 100, 2 ) 
+total = total + round( sum(events_dt$winter) / data_rows * 100, 2 )
+total
+# find surf events
+events_dt$surf <- grepl("surf", events_dt$event_type, ignore.case=TRUE)
+events_dt$event_type[events_dt$surf == TRUE] <- "surf"
+round( sum(events_dt$surf) / data_rows * 100, 2 ) 
+total = total + round( sum(events_dt$surf) / data_rows * 100, 2 )
+total
+# find cold events
+events_dt$cold <- grepl("cold", events_dt$event_type, ignore.case=TRUE)
+events_dt$event_type[events_dt$cold == TRUE] <- "cold"
+round( sum(events_dt$cold) / data_rows * 100, 2 ) 
+total = total + round( sum(events_dt$cold) / data_rows * 100, 2 )
+total
+# find warm events
+events_dt$warm <- grepl("warm", events_dt$event_type, ignore.case=TRUE)
+events_dt$event_type[events_dt$warm == TRUE] <- "warm"
+round( sum(events_dt$warm) / data_rows * 100, 2 ) 
+total = total + round( sum(events_dt$warm) / data_rows * 100, 2 )
+total
+# find rain events
+events_dt$rain <- grepl("rain", events_dt$event_type, ignore.case=TRUE)
+events_dt$event_type[events_dt$rain == TRUE] <- "rain"
+round( sum(events_dt$rain)/data_rows*100, 2)
+total = total + round( sum(events_dt$rain) / data_rows * 100, 2 )
+total
+# find snow events
+events_dt$snow <- grepl("snow", events_dt$event_type, ignore.case=TRUE)
+events_dt$event_type[events_dt$snow == TRUE] <- "snow"
+round( sum(events_dt$snow)/data_rows*100, 2)
+total = total + round( sum(events_dt$snow) / data_rows * 100, 2 )
+total
+# find ice events
+events_dt$ice <- grepl("ice", events_dt$event_type, ignore.case=TRUE)
+events_dt$ice <- grepl("glaze", events_dt$event_type, ignore.case=TRUE)
+events_dt$event_type[events_dt$ice == TRUE] <- "ice"
+round( sum(events_dt$ice)/data_rows*100, 2)
+total = total + round( sum(events_dt$ice) / data_rows * 100, 2 )
+total
+# find fire events
+events_dt$fire <- grepl("fire", events_dt$event_type, ignore.case=TRUE)
+events_dt$event_type[events_dt$fire == TRUE] <- "fire"
+round( sum(events_dt$fire)/data_rows*100, 2)
+total = total + round( sum(events_dt$fire) / data_rows * 100, 2 )
+total
+# find hail events
+events_dt$hail <- grepl("hail", events_dt$event_type, ignore.case=TRUE)
+events_dt$event_type[events_dt$hail == TRUE] <- "hail"
+round( sum(events_dt$hail)/data_rows*100, 2)
+total = total + round( sum(events_dt$hail) / data_rows * 100, 2 )
+total
+# find sleet events
+events_dt$sleet <- grepl("sleet", events_dt$event_type, ignore.case=TRUE)
+events_dt$event_type[events_dt$sleet == TRUE] <- "sleet"
+round( sum(events_dt$sleet)/data_rows*100, 2)
+total = total + round( sum(events_dt$sleet) / data_rows * 100, 2 )
+total
+# find frost events
+events_dt$frost <- grepl("frost", events_dt$event_type, ignore.case=TRUE)
+events_dt$event_type[events_dt$frost == TRUE] <- "frost"
+round( sum(events_dt$frost)/data_rows*100, 2)
+total = total + round( sum(events_dt$frost) / data_rows * 100, 2 )
+total
+# find hurricane events
+events_dt$hurricane <- grepl("hurricane", events_dt$event_type, ignore.case=TRUE)
+events_dt$event_type[events_dt$hurricane == TRUE] <- "hurricane"
+round( sum(events_dt$hurricane)/data_rows*100, 2)
+total = total + round( sum(events_dt$hurricane) / data_rows * 100, 2 )
+total
+# find tropical events
+events_dt$tropical <- grepl("tropical", events_dt$event_type, ignore.case=TRUE)
+events_dt$event_type[events_dt$tropical == TRUE] <- "tropical"
+round( sum(events_dt$tropical)/data_rows*100, 2)
+total = total + round( sum(events_dt$tropical) / data_rows * 100, 2 )
+total
+# find dry events
+events_dt$dry <- grepl("dry", events_dt$event_type, ignore.case=TRUE)
+events_dt$event_type[events_dt$dry == TRUE] <- "dry"
+round( sum(events_dt$dry)/data_rows*100, 2)
+total = total + round( sum(events_dt$dry) / data_rows * 100, 2 )
+total
+# find wet events
+events_dt$wet <- grepl("wet", events_dt$event_type, ignore.case=TRUE)
+events_dt$event_type[events_dt$wet == TRUE] <- "wet"
+round( sum(events_dt$wet)/data_rows*100, 2)
+total = total + round( sum(events_dt$wet) / data_rows * 100, 2 )
+total
+# find sea events
+events_dt$sea <- grepl("sea", events_dt$event_type, ignore.case=TRUE)
+events_dt$event_type[events_dt$sea == TRUE] <- "sea"
+round( sum(events_dt$sea)/data_rows*100, 2)
+total = total + round( sum(events_dt$sea) / data_rows * 100, 2 )
+total
+# find wave events
+events_dt$wave <- grepl("wave", events_dt$event_type, ignore.case=TRUE)
+events_dt$event_type[events_dt$wave == TRUE] <- "wave"
+round( sum(events_dt$wave)/data_rows*100, 2)
+total = total + round( sum(events_dt$wave) / data_rows * 100, 2 )
+total
+# find tsunami events
+events_dt$tsunami <- grepl("tsunami", events_dt$event_type, ignore.case=TRUE)
+events_dt$event_type[events_dt$tsunami == TRUE] <- "tsunami"
+round( sum(events_dt$tsunami)/data_rows*100, 2)
+total = total + round( sum(events_dt$tsunami) / data_rows * 100, 2 )
+total
+
+
+events_dt$events <- as.factor( events_dt$event_type )
+
+
+# display in frequency
+# count frequency of each event type
+population_effects <- events_dt[, lapply(.SD, sum, na.rm=TRUE), by="events", .SDcols=c("FATALITIES", "INJURIES") ]
+poulation_effects$combined <- population_effects$FATALITIES + population_effects$INJURIES
+population_sort <- population_effects[ order(population_effects[,2], population_effects[,3]), ]
+head(population_sort, n=25)
+
+```
