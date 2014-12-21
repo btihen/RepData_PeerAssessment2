@@ -44,18 +44,21 @@ events_dt$event_char <- gsub(".*record.*", "summary", events_dt$event_char, igno
 events_dt$event_char <- gsub(".*county.*", "summary", events_dt$event_char, ignore.case=TRUE)
 events_dt$event_char <- gsub(".*southeast.*", "summary", events_dt$event_char, ignore.case=TRUE)
 
-events_dt$event_char <- gsub(".*hyp.*", "human", events_dt$event_char, ignore.case=TRUE)
-events_dt$event_char <- gsub(".*drown.*", "human", events_dt$event_char, ignore.case=TRUE)
-events_dt$event_char <- gsub(".*dam.*", "human", events_dt$event_char, ignore.case=TRUE)
-events_dt$event_char <- gsub(".*acc.*", "human", events_dt$event_char, ignore.case=TRUE)
-events_dt$event_char <- gsub(".*mishap.*", "human", events_dt$event_char, ignore.case=TRUE)
-events_dt$event_char <- gsub(".*flag.*", "human", events_dt$event_char, ignore.case=TRUE)
+events_dt$event_char <- gsub(".*hyp.*", "other", events_dt$event_char, ignore.case=TRUE)
+events_dt$event_char <- gsub(".*drown.*", "other", events_dt$event_char, ignore.case=TRUE)
+events_dt$event_char <- gsub(".*dam.*", "other", events_dt$event_char, ignore.case=TRUE)
+events_dt$event_char <- gsub(".*acc.*", "other", events_dt$event_char, ignore.case=TRUE)
+events_dt$event_char <- gsub(".*mishap.*", "other", events_dt$event_char, ignore.case=TRUE)
+events_dt$event_char <- gsub(".*flag.*", "other", events_dt$event_char, ignore.case=TRUE)
 
-#events_dt$event_char <- gsub("\?", "note", events_dt$event_char, ignore.case=TRUE)
-events_dt$event_char <- gsub(".*no .*", "note", events_dt$event_char, ignore.case=TRUE)
-events_dt$event_char <- gsub(".*none.*", "note", events_dt$event_char, ignore.case=TRUE)
-events_dt$event_char <- gsub(".*mild.*", "note", events_dt$event_char, ignore.case=TRUE)
-events_dt$event_char <- gsub(".*other.*", "note", events_dt$event_char, ignore.case=TRUE)
+events_dt$event_char <- gsub("\\?", "other", events_dt$event_char, ignore.case=TRUE)
+events_dt$event_char <- gsub(".*no .*", "other", events_dt$event_char, ignore.case=TRUE)
+events_dt$event_char <- gsub(".*none.*", "other", events_dt$event_char, ignore.case=TRUE)
+events_dt$event_char <- gsub(".*mild.*", "other", events_dt$event_char, ignore.case=TRUE)
+events_dt$event_char <- gsub(".*other.*", "other", events_dt$event_char, ignore.case=TRUE)
+events_dt$event_char <- gsub(".*urban.*", "other", events_dt$event_char, ignore.case=TRUE)
+events_dt$event_char <- gsub(".*wall.*", "other", events_dt$event_char, ignore.case=TRUE)
+events_dt$event_char <- gsub(".*vog.*", "other", events_dt$event_char, ignore.case=TRUE)
 
 
 events_dt$event_char <- gsub(".*freezing.*", "ice", events_dt$event_char, ignore.case=TRUE)
@@ -91,7 +94,6 @@ events_dt$event_char <- gsub(".*chill.*", "cold", events_dt$event_char, ignore.c
 events_dt$event_char <- gsub(".*low.*", "cold", events_dt$event_char, ignore.case=TRUE)
 events_dt$event_char <- gsub(".*snow.*", "snow", events_dt$event_char, ignore.case=TRUE)
 events_dt$event_char <- gsub(".*fog.*", "fog", events_dt$event_char, ignore.case=TRUE)
-events_dt$event_char <- gsub(".*smoke.*", "smoke", events_dt$event_char, ignore.case=TRUE)
 events_dt$event_char <- gsub(".*dust.*", "dust", events_dt$event_char, ignore.case=TRUE)
 events_dt$event_char <- gsub(".*dry.*", "drought", events_dt$event_char, ignore.case=TRUE)
 events_dt$event_char <- gsub(".*excessive.*", "drought", events_dt$event_char, ignore.case=TRUE)
@@ -102,6 +104,7 @@ events_dt$event_char <- gsub(".*warm.*", "heat", events_dt$event_char, ignore.ca
 events_dt$event_char <- gsub(".*frost.*", "frost", events_dt$event_char, ignore.case=TRUE)
 events_dt$event_char <- gsub(".*freeze.*", "frost", events_dt$event_char, ignore.case=TRUE)
 events_dt$event_char <- gsub(".*wint.*", "winter", events_dt$event_char, ignore.case=TRUE)
+events_dt$event_char <- gsub(".*smoke.*", "fire", events_dt$event_char, ignore.case=TRUE)
 events_dt$event_char <- gsub(".*fire.*", "fire", events_dt$event_char, ignore.case=TRUE)
 events_dt$event_char <- gsub(".*rain.*", "rain", events_dt$event_char, ignore.case=TRUE)
 events_dt$event_char <- gsub(".*mix.*", "rain", events_dt$event_char, ignore.case=TRUE)
@@ -135,9 +138,6 @@ events_dt$event_char <- gsub(".*swell.*", "marine waves", events_dt$event_char, 
 events_dt$event_char <- gsub(".*wave.*", "marine waves", events_dt$event_char, ignore.case=TRUE)
 events_dt$event_char <- gsub(".*high.*", "marine waves", events_dt$event_char, ignore.case=TRUE)
 events_dt$event_char <- gsub(".*seiche.*", "marine waves", events_dt$event_char, ignore.case=TRUE)
-events_dt$event_char <- gsub(".*urban.*", "urban", events_dt$event_char, ignore.case=TRUE)
-events_dt$event_char <- gsub(".*wall.*", "wall cloud", events_dt$event_char, ignore.case=TRUE)
-events_dt$event_char <- gsub(".*vog.*", "air quality", events_dt$event_char, ignore.case=TRUE)
 
 events_dt$event_type <- as.factor( events_dt$event_char )
 levels( events_dt$event_type )
@@ -157,136 +157,55 @@ events_dt$property_mult[ events_dt$PROPDMGEXP == "M" ] <- 1000000
 events_dt$property_mult[ events_dt$PROPDMGEXP == "B" ] <- 1000000000
 events_dt$property_usd <- events_dt$PROPDMG * events_dt$property_mult
 
+# calculate combined damage costs
+events_dt$total_usd  <- events_dt$crop_usd + events_dt$property_usd
+
+# calculate combined health effects (death and injuries)
+events_dt$health_count <- events_dt$FATALITIES + events_dt$INJURIES
 
 # create a summary data table of each event type with important effects summed
-effects <- events_dt[, lapply(.SD, sum, na.rm=TRUE), by="event_type", .SDcols=c("FATALITIES", "INJURIES", "property_usd", "crop_usd") ]
-
-# create grand totals for each effect
-effects$health_count <- effects$FATALITIES + effects$INJURIES
-effects$total_usd <- effects$crop_usd + effects$property_usd
-
-# count the number of unique events for each type of event
-#effects$event_count <- list()
+effects <- events_dt[, lapply(.SD, sum, na.rm=TRUE), by="event_type", .SDcols=c("FATALITIES", "INJURIES", "property_usd", "crop_usd", "health_count", "total_usd") ]
 
 # count each type of event
-events_dt$tornado <-  grepl("tornado", events_dt$event_char, ignore.case=TRUE)
-effects$events_count[ effects$event_type == "tornado" ] <- sum(events_dt$tornado)
-
-events_dt$thunder <-  grepl("thunderstorm", events_dt$event_char, ignore.case=TRUE) 
-effects$events_count[ effects$event_type == "thunderstorm" ] <- sum(events_dt$thunder)
-
-events_dt$hurricane <-  grepl("hurricane", events_dt$event_char, ignore.case=TRUE) 
-effects$events_count[ effects$event_type == "hurricane" ] <- sum(events_dt$hurricane)
-
-events_dt$hail <-  grepl("hail", events_dt$event_char, ignore.case=TRUE)
-effects$events_count[ effects$event_type == "hail" ] <- sum(events_dt$hail)
-
-events_dt$winter <-  grepl("winter", events_dt$event_char, ignore.case=TRUE)
-effects$events_count[ effects$event_type == "winter" ] <- sum(events_dt$winter)
-
-events_dt$snow <-  grepl("snow", events_dt$event_char, ignore.case=TRUE)
-effects$events_count[ effects$event_type == "snow" ] <- sum(events_dt$snow)
-
-events_dt$ice <-  grepl("ice", events_dt$event_char, ignore.case=TRUE)
-effects$events_count[ effects$event_type == "ice" ] <- sum(events_dt$ice)
-
-events_dt$summary <-  grepl("summary", events_dt$event_char, ignore.case=TRUE)
-effects$events_count[ effects$event_type == "summary" ] <- sum(events_dt$summary)
-
-events_dt$lightning <-  grepl("lightning", events_dt$event_char, ignore.case=TRUE)
-effects$events_count[ effects$event_type == "ligthning" ] <- sum(events_dt$ligthning)
-
-events_dt$fog <-  grepl("fog", events_dt$event_char, ignore.case=TRUE)
-effects$events_count[ effects$event_type == "fog" ] <- sum(events_dt$fog)
-
-events_dt$rip <-  grepl("rip current", events_dt$event_char, ignore.case=TRUE)
-effects$events_count[ effects$event_type == "rip current" ] <- sum(events_dt$rip)
-
-events_dt$rain <-  grepl("rain", events_dt$event_char, ignore.case=TRUE)
-effects$events_count[ effects$event_type == "rain" ] <- sum(events_dt$rain)
-
-events_dt$flood <-  grepl("flood", events_dt$event_char, ignore.case=TRUE)
-effects$events_count[ effects$event_type == "flood" ] <- sum(events_dt$flood)
-
-events_dt$wind <-  grepl("wind", events_dt$event_char, ignore.case=TRUE)
-effects$events_count[ effects$event_type == "wind" ] <- sum(events_dt$wind)
-
-events_dt$heat <-  grepl("heat", events_dt$event_char, ignore.case=TRUE)
-effects$events_count[ effects$event_type == "heat" ] <- sum(events_dt$heat)
-
-events_dt$cold <-  grepl("cold", events_dt$event_char, ignore.case=TRUE)
-effects$events_count[ effects$event_type == "cold" ] <- sum(events_dt$cold)
-
-events_dt$frost <-  grepl("frost", events_dt$event_char, ignore.case=TRUE)
-effects$events_count[ effects$event_type == "frost" ] <- sum(events_dt$frost)
-
-events_dt$blizzard <-  grepl("blizzard", events_dt$event_char, ignore.case=TRUE)
-effects$events_count[ effects$event_type == "blizzard" ] <- sum(events_dt$blizzard)
-
-events_dt$tide <-  grepl("tide", events_dt$event_char, ignore.case=TRUE)
-effects$events_count[ effects$event_type == "tide" ] <- sum(events_dt$tide)
-
-events_dt$avalanche <-  grepl("avalanche", events_dt$event_char, ignore.case=TRUE)
-effects$events_count[ effects$event_type == "avalanche" ] <- sum(events_dt$avalanche)
-
-events_dt$dust <-  grepl("dust", events_dt$event_char, ignore.case=TRUE)
-effects$events_count[ effects$event_type == "dust" ] <- sum(events_dt$dust)
-
-events_dt$sleet <-  grepl("sleet", events_dt$event_char, ignore.case=TRUE)
-effects$events_count[ effects$event_type == "sleet" ] <- sum(events_dt$sleet)
-
-events_dt$surf <-  grepl("marine waves", events_dt$event_char, ignore.case=TRUE)
-effects$events_count[ effects$event_type == "marine waves" ] <- sum(events_dt$surf)
-
-events_dt$urban <-  grepl("urban", events_dt$event_char, ignore.case=TRUE)
-effects$events_count[ effects$event_type == "urban" ] <- sum(events_dt$urban)
-
-events_dt$urban <-  grepl("lightning", events_dt$event_char, ignore.case=TRUE)
-effects$events_count[ effects$event_type == "lightning" ] <- sum(events_dt$urban)
-
-events_dt$urban <-  grepl("wall cloud", events_dt$event_char, ignore.case=TRUE)
-effects$events_count[ effects$event_type == "wall cloud" ] <- sum(events_dt$urban)
-
-events_dt$urban <-  grepl("human", events_dt$event_char, ignore.case=TRUE)
-effects$events_count[ effects$event_type == "human" ] <- sum(events_dt$urban)
-
-events_dt$urban <-  grepl("drought", events_dt$event_char, ignore.case=TRUE)
-effects$events_count[ effects$event_type == "drought" ] <- sum(events_dt$urban)
-
-events_dt$urban <-  grepl("fire", events_dt$event_char, ignore.case=TRUE)
-effects$events_count[ effects$event_type == "fire" ] <- sum(events_dt$urban)
-
-events_dt$urban <-  grepl("debris slide", events_dt$event_char, ignore.case=TRUE)
-effects$events_count[ effects$event_type == "debris slide" ] <- sum(events_dt$urban)
-
-events_dt$urban <-  grepl("tropical storm", events_dt$event_char, ignore.case=TRUE)
-effects$events_count[ effects$event_type == "tropical storm" ] <- sum(events_dt$urban)
-
-events_dt$urban <-  grepl("note", events_dt$event_char, ignore.case=TRUE)
-effects$events_count[ effects$event_type == "note" ] <- sum(events_dt$urban)
-
-events_dt$urban <-  grepl("volcano", events_dt$event_char, ignore.case=TRUE)
-effects$events_count[ effects$event_type == "volcano" ] <- sum(events_dt$urban)
-
-events_dt$urban <-  grepl("air quality", events_dt$event_char, ignore.case=TRUE)
-effects$events_count[ effects$event_type == "air quality" ] <- sum(events_dt$urban)
-
-events_dt$urban <-  grepl("smoke", events_dt$event_char, ignore.case=TRUE)
-effects$events_count[ effects$event_type == "smoke" ] <- sum(events_dt$urban)
-
-events_dt$urban <-  grepl("tsunami", events_dt$event_char, ignore.case=TRUE)
-effects$events_count[ effects$event_type == "tsunami" ] <- sum(events_dt$urban)
-# see the data summary
+event_count <- as.data.frame(table(events_dt$event_type))
+colnames(event_count)[1] <- "event_type"
+colnames(event_count)[2] <- "events_count"
+effects <- merge(effects, event_count, by="event_type")
+# calculate the average effects per event
+effects$avg_health_per_event <- round( effects$health_count / effects$events_count, 2 )
+effects$avg_cost_per_event   <- round( effects$total_usd    / effects$events_count, 2 )
 effects
 
+
 # sort by effect on health
-#health_sort <- effects[ order(effects[,2], effects[,3]), ]
-health <- effects
-health <- health[ order( -health$FALALITIES) ]
-health
+#health[ , crop_usd,total_usd :=NULL]
+#health[ , total_usd:=NULL ]
+health <- as.data.frame(effects)
+health <- data.table(health)
+health[ , c("property_usd", "crop_usd", "total_usd", "avg_cost_per_event"):=NULL ]
+health 
+
+health_by_deaths <- health[ order( -health$FATALITIES) ]
+health_by_deaths
+health_by_injuries <- health[ order( -health$INJURIES) ]
+health_by_injuries
+health_per_event <- health[ order( -health$avg_health_per_event) ]
+health_per_event
+
 
 # sort by cost
-cost <- effects
-cost <- cost[ order( -cost$total_usd) ]
-cost
+cost <- as.data.frame(effects)
+cost <- data.table(cost)
+cost[ , c("FATALITIES", "INJURIES", "health_count", "avg_health_per_event"):=NULL ]
+cost 
+
+cost_by_crop <- cost[ order( -cost$crop_usd) ]
+cost_by_crop
+cost_by_property <- cost[ order( -cost$property_usd) ]
+cost_by_property
+cost_per_event <- cost[ order( -cost$avg_cost_per_event) ]
+cost_per_event
+
+
+
 
