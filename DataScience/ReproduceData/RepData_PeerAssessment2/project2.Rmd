@@ -1,29 +1,50 @@
 ---
-title: "project2"
-output: 
-  pdf_document:
+title: "Project 2 -- Impact of WEATHER EVENTS in the US over Time"
+author: "Bill Tihen"
+date: "Dec 21, 2014"
+output:
+  html_document:
+    toc: true
     keep_md: true
----
-# SEVERE WEATHER EVENTS and their impact in the US
+  pdf_document:
+    toc: true
+    highlight: zenburn
+
+--- 
 
 **For the course: Reproducable Data -- Project 2 -- Due Dec 21, 2014**
 
 ## Synopsis
 
+This study from 1950 until 2011 studies the impact of health and the cost damage caused by weather events.  The data is presented in a variety of ways, so that public officals across the US can make appropriate decision based on the weather events in the local area.
+
+**The following list actionable observations that can be used by public officials for planning** 
+
+* areas near the coast are have the highest costs and health effects per event (hurricanes, tropical storms, tsunamis and tidal events are the most expensive per event), thus proper planning needs to be done so that emergencies services can handle large infrequent influxes -- probably in nearby, but inland areas less affect by the coastal events.  
+* areas affected by tornados have the highest death and injury rates (because of the many weather events with small impact), thus proper emergency medical for frequent, but small numbers of injuries need to be planned.  
+* areas affected by high heat, droughts and floods can expect signifigant health events (both injuries and deaths) and damages (both crop and property).  It may be worth investigating if most heat and drought related injuries can be prevented.  
+* the number of events per year is increasing considerably -- this may mean that emergency response staff may have less recovery time between events.
+* damages per year has been increasing since 1990, however, the years with very high expenses has increased in both magnitude and frequency since 1990 too -- thus it seems emergency response budgets will need to be increased at a corresponding rate.
+* damages per event may be on the increase since 1990, and the very damaging events (outliers), have increased -- thus a relatively large worse case fiscal plan (on top of the normal emergency response budget) may be prudent.
+
+**See the results section to view the supporting data.**
+
 ## Processing
 
-**Load helpful libraries**
+1. **Load helpful libraries**
 
 ```{r libraries}
+suppressWarnings(suppressMessages( library(plyr) ))
 suppressWarnings(suppressMessages( library(knitr) ))
-#suppressWarnings(suppressMessages( library(lattice) ))
+suppressWarnings(suppressMessages( library(ggplot2) ))
 suppressWarnings(suppressMessages( library(data.table) ))
 ```
 
 
-**Get and read the file:**
+2. **Get and read the file:**
 
 ```{r get_data, cache=TRUE}
+# define the data path, filename and URL to be downloaded
 data_path = "data"
 download_file = "storm-data.csv.bz2"
 download_file_path = file.path( data_path, download_file )
@@ -31,219 +52,402 @@ url = "https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2"
 
 # create the data folfder if it doesnt exist
 if (!(file.exists( data_path ))) {
-  # "Data folder exists"
   dir.create( data_path, showWarnings = FALSE )
 } 
-# download the file
-download.file(url, download_file_path, method="curl")
 
+# download the file to the data directory if it is not there
+if (!(file.exists( download_file_path ))) {
+  download.file(url, download_file_path, method="curl")
+}
 # read the file
-# raw_data <- read.table(bzfile("storm-data.csv.bz2"), sep=",")
 raw_data <- read.table(bzfile( download_file_path ), sep=",", head=TRUE)
-events_dt   <- data.table(raw_data)
 ```
 
-**Explore the impact of Sever Events on the population's health
+3. **Check that event labels are consistent with the 40+ NOA Standard events** listed at: https://d396qusza40orc.cloudfront.net/repdata%2Fpeer2_doc%2Fpd01016005curr.pdf
 
-```{r population}
-
-# processing
+```{r event_types, cache=TRUE}
+# load into a data table - as it is easy to work with and fast to load
 events_dt <- data.table(raw_data)
-# events are all over the place with lots of duplicates
+
+# how many data entries
+events_total <- nrow( events_dt)
+events_total
+
+# check the event_types -- do they match NOA definitions?
 levels( events_dt$EVTYPE )
-# 
-data_rows <- nrow( events_dt)
-total <- 0
-# simplify datatypes
-events_dt$event_type <- as.character( events_dt$EVTYPE )
-# find freezing percipitation events
-events_dt$freezing <- grepl("freezing", events_dt$event_type, ignore.case=TRUE)
-events_dt$event_type[events_dt$freezing == TRUE] <- "freezing precipitation"
-round( sum(events_dt$freezing) / data_rows * 100, 2 ) 
-total = total + round( sum(events_dt$freezing) / data_rows * 100, 2 )
-total
-# find tornado events
-events_dt$tornado <- grepl("tornado", events_dt$event_type, ignore.case=TRUE)
-events_dt$event_type[events_dt$tornado == TRUE] <- "tornado"
-round( sum(events_dt$tornado)/data_rows*100, 2)
-total = total + round( sum(events_dt$tornado) / data_rows * 100, 2 )
-total
-# find heat events
-events_dt$heat <- grepl("heat", events_dt$event_type, ignore.case=TRUE)
-events_dt$event_type[events_dt$heat == TRUE] <- "heat"
-round( sum(events_dt$heat)/data_rows*100, 2)
-total = total + round( sum(events_dt$heat) / data_rows * 100, 2 )
-total
-# find flood events
-events_dt$flood <- grepl("flood", events_dt$event_type, ignore.case=TRUE)
-events_dt$event_type[events_dt$flood == TRUE] <- "flood"
-round( sum(events_dt$flood)/data_rows*100, 2)
-total = total + round( sum(events_dt$flood) / data_rows * 100, 2 )
-total
-# find lightning events
-events_dt$lightning <- grepl("lightning", events_dt$event_type, ignore.case=TRUE)
-events_dt$event_type[events_dt$lightning == TRUE] <- "lightning"
-round( sum(events_dt$lightning)/data_rows*100, 2)
-total = total + round( sum(events_dt$lightning) / data_rows * 100, 2 )
-total
-# find chill events
-events_dt$chill <- grepl("chill", events_dt$event_type, ignore.case=TRUE)
-events_dt$event_type[events_dt$chill == TRUE] <- "chill"
-round( sum(events_dt$chill)/data_rows*100, 2)
-total = total + round( sum(events_dt$chill) / data_rows * 100, 2 )
-total
-# find thunderstorm events
-events_dt$thunderstorm <- grepl("tstm", events_dt$event_type, ignore.case=TRUE)
-events_dt$thunderstorm <- grepl("thunderstorm", events_dt$event_type, ignore.case=TRUE)
-events_dt$event_type[events_dt$thunderstorm == TRUE] <- "thunderstorm"
-round( sum(events_dt$thunderstorm)/data_rows*100, 2)
-total = total + round( sum(events_dt$thunderstorm) / data_rows * 100, 2 )
-total
-# find wind events
-events_dt$wind <- grepl("wind", events_dt$event_type, ignore.case=TRUE)
-events_dt$event_type[events_dt$wind == TRUE] <- "wind"
-round( sum(events_dt$wind)/data_rows*100, 2)
-total = total + round( sum(events_dt$wind) / data_rows * 100, 2 )
-total
-# find Rip current events
-events_dt$rip <- grepl("rip", events_dt$event_type, ignore.case=TRUE)
-events_dt$event_type[events_dt$rip == TRUE] <- "rip"
-round( sum(events_dt$rip)/data_rows*100, 2)
-total = total + round( sum(events_dt$rip) / data_rows * 100, 2 )
-total
-# find avalanche events
-events_dt$avalanche <- grepl("avalanche", events_dt$event_type, ignore.case=TRUE)
-events_dt$event_type[events_dt$avalanche == TRUE] <- "avalanche"
-round( sum(events_dt$avalanche)/data_rows*100, 2)
-total = total + round( sum(events_dt$avalanche) / data_rows * 100, 2 )
-total
-# find slide events
-events_dt$slide <- grepl("slide", events_dt$event_type, ignore.case=TRUE)
-events_dt$event_type[events_dt$slide == TRUE] <- "landslide"
-round( sum(events_dt$slide)/data_rows*100, 2)
-total = total + round( sum(events_dt$slide) / data_rows * 100, 2 )
-total
-# find winter events
-events_dt$winter <- grepl("wintry", events_dt$event_type, ignore.case=TRUE)
-events_dt$winter <- grepl("winter", events_dt$event_type, ignore.case=TRUE)
-events_dt$winter <- grepl("blizzard", events_dt$event_type, ignore.case=TRUE)
-events_dt$event_type[events_dt$winter == TRUE] <- "winter storm"
-round( sum(events_dt$winter) / data_rows * 100, 2 ) 
-total = total + round( sum(events_dt$winter) / data_rows * 100, 2 )
-total
-# find surf events
-events_dt$surf <- grepl("surf", events_dt$event_type, ignore.case=TRUE)
-events_dt$event_type[events_dt$surf == TRUE] <- "surf"
-round( sum(events_dt$surf) / data_rows * 100, 2 ) 
-total = total + round( sum(events_dt$surf) / data_rows * 100, 2 )
-total
-# find cold events
-events_dt$cold <- grepl("cold", events_dt$event_type, ignore.case=TRUE)
-events_dt$event_type[events_dt$cold == TRUE] <- "cold"
-round( sum(events_dt$cold) / data_rows * 100, 2 ) 
-total = total + round( sum(events_dt$cold) / data_rows * 100, 2 )
-total
-# find warm events
-events_dt$warm <- grepl("warm", events_dt$event_type, ignore.case=TRUE)
-events_dt$event_type[events_dt$warm == TRUE] <- "warm"
-round( sum(events_dt$warm) / data_rows * 100, 2 ) 
-total = total + round( sum(events_dt$warm) / data_rows * 100, 2 )
-total
-# find rain events
-events_dt$rain <- grepl("rain", events_dt$event_type, ignore.case=TRUE)
-events_dt$event_type[events_dt$rain == TRUE] <- "rain"
-round( sum(events_dt$rain)/data_rows*100, 2)
-total = total + round( sum(events_dt$rain) / data_rows * 100, 2 )
-total
-# find snow events
-events_dt$snow <- grepl("snow", events_dt$event_type, ignore.case=TRUE)
-events_dt$event_type[events_dt$snow == TRUE] <- "snow"
-round( sum(events_dt$snow)/data_rows*100, 2)
-total = total + round( sum(events_dt$snow) / data_rows * 100, 2 )
-total
-# find ice events
-events_dt$ice <- grepl("ice", events_dt$event_type, ignore.case=TRUE)
-events_dt$ice <- grepl("glaze", events_dt$event_type, ignore.case=TRUE)
-events_dt$event_type[events_dt$ice == TRUE] <- "ice"
-round( sum(events_dt$ice)/data_rows*100, 2)
-total = total + round( sum(events_dt$ice) / data_rows * 100, 2 )
-total
-# find fire events
-events_dt$fire <- grepl("fire", events_dt$event_type, ignore.case=TRUE)
-events_dt$event_type[events_dt$fire == TRUE] <- "fire"
-round( sum(events_dt$fire)/data_rows*100, 2)
-total = total + round( sum(events_dt$fire) / data_rows * 100, 2 )
-total
-# find hail events
-events_dt$hail <- grepl("hail", events_dt$event_type, ignore.case=TRUE)
-events_dt$event_type[events_dt$hail == TRUE] <- "hail"
-round( sum(events_dt$hail)/data_rows*100, 2)
-total = total + round( sum(events_dt$hail) / data_rows * 100, 2 )
-total
-# find sleet events
-events_dt$sleet <- grepl("sleet", events_dt$event_type, ignore.case=TRUE)
-events_dt$event_type[events_dt$sleet == TRUE] <- "sleet"
-round( sum(events_dt$sleet)/data_rows*100, 2)
-total = total + round( sum(events_dt$sleet) / data_rows * 100, 2 )
-total
-# find frost events
-events_dt$frost <- grepl("frost", events_dt$event_type, ignore.case=TRUE)
-events_dt$event_type[events_dt$frost == TRUE] <- "frost"
-round( sum(events_dt$frost)/data_rows*100, 2)
-total = total + round( sum(events_dt$frost) / data_rows * 100, 2 )
-total
-# find hurricane events
-events_dt$hurricane <- grepl("hurricane", events_dt$event_type, ignore.case=TRUE)
-events_dt$event_type[events_dt$hurricane == TRUE] <- "hurricane"
-round( sum(events_dt$hurricane)/data_rows*100, 2)
-total = total + round( sum(events_dt$hurricane) / data_rows * 100, 2 )
-total
-# find tropical events
-events_dt$tropical <- grepl("tropical", events_dt$event_type, ignore.case=TRUE)
-events_dt$event_type[events_dt$tropical == TRUE] <- "tropical"
-round( sum(events_dt$tropical)/data_rows*100, 2)
-total = total + round( sum(events_dt$tropical) / data_rows * 100, 2 )
-total
-# find dry events
-events_dt$dry <- grepl("dry", events_dt$event_type, ignore.case=TRUE)
-events_dt$event_type[events_dt$dry == TRUE] <- "dry"
-round( sum(events_dt$dry)/data_rows*100, 2)
-total = total + round( sum(events_dt$dry) / data_rows * 100, 2 )
-total
-# find wet events
-events_dt$wet <- grepl("wet", events_dt$event_type, ignore.case=TRUE)
-events_dt$event_type[events_dt$wet == TRUE] <- "wet"
-round( sum(events_dt$wet)/data_rows*100, 2)
-total = total + round( sum(events_dt$wet) / data_rows * 100, 2 )
-total
-# find sea events
-events_dt$sea <- grepl("sea", events_dt$event_type, ignore.case=TRUE)
-events_dt$event_type[events_dt$sea == TRUE] <- "sea"
-round( sum(events_dt$sea)/data_rows*100, 2)
-total = total + round( sum(events_dt$sea) / data_rows * 100, 2 )
-total
-# find wave events
-events_dt$wave <- grepl("wave", events_dt$event_type, ignore.case=TRUE)
-events_dt$event_type[events_dt$wave == TRUE] <- "wave"
-round( sum(events_dt$wave)/data_rows*100, 2)
-total = total + round( sum(events_dt$wave) / data_rows * 100, 2 )
-total
-# find tsunami events
-events_dt$tsunami <- grepl("tsunami", events_dt$event_type, ignore.case=TRUE)
-events_dt$event_type[events_dt$tsunami == TRUE] <- "tsunami"
-round( sum(events_dt$tsunami)/data_rows*100, 2)
-total = total + round( sum(events_dt$tsunami) / data_rows * 100, 2 )
-total
+```
 
+4. **Obviously there are many duplicates, abbreviations, misspellings and non-categorized events -- all this needs to be cleaned up.**
 
-events_dt$events <- as.factor( events_dt$event_type )
+```{r level_clean_up, cache=TRUE}
+# copy factors to a new character field
+events_dt$event_char <- as.character( events_dt$EVTYPE )
 
+# simplify and clean up the data -- the coding is not consistent with the standards listed by
+# by NOA as defined in their data definitions found at:
+# https://d396qusza40orc.cloudfront.net/repdata%2Fpeer2_doc%2Fpd01016005curr.pdf
+# categorize all summary data as summary data
+events_dt$event_char <- gsub(".*summary.*", "summary", events_dt$event_char, ignore.case=TRUE)
+events_dt$event_char <- gsub(".*month.*", "summary", events_dt$event_char, ignore.case=TRUE)
+events_dt$event_char <- gsub(".*week.*", "summary", events_dt$event_char, ignore.case=TRUE)
+events_dt$event_char <- gsub(".*year.*", "summary", events_dt$event_char, ignore.case=TRUE)
+events_dt$event_char <- gsub(".*record.*", "summary", events_dt$event_char, ignore.case=TRUE)
+events_dt$event_char <- gsub(".*county.*", "summary", events_dt$event_char, ignore.case=TRUE)
+events_dt$event_char <- gsub(".*southeast.*", "summary", events_dt$event_char, ignore.case=TRUE)
 
-# display in frequency
-# count frequency of each event type
-population_effects <- events_dt[, lapply(.SD, sum, na.rm=TRUE), by="events", .SDcols=c("FATALITIES", "INJURIES") ]
-poulation_effects$combined <- population_effects$FATALITIES + population_effects$INJURIES
-population_sort <- population_effects[ order(population_effects[,2], population_effects[,3]), ]
-head(population_sort, n=25)
+# categorize all "other events" (accidents, mild weather, urban events and
+# unoffical weather events, etc) as other.  For a list of official events, 
+# see:  https://d396qusza40orc.cloudfront.net/repdata%2Fpeer2_doc%2Fpd01016005curr.pdf
+# for the purposes of this analysis -- similar events have been further grouped from 
+# 42 defined events to 30 types of weather events.
+events_dt$event_char <- gsub(".*hyp.*", "other", events_dt$event_char, ignore.case=TRUE)
+events_dt$event_char <- gsub(".*drown.*", "other", events_dt$event_char, ignore.case=TRUE)
+events_dt$event_char <- gsub(".*dam.*", "other", events_dt$event_char, ignore.case=TRUE)
+events_dt$event_char <- gsub(".*acc.*", "other", events_dt$event_char, ignore.case=TRUE)
+events_dt$event_char <- gsub(".*mishap.*", "other", events_dt$event_char, ignore.case=TRUE)
+events_dt$event_char <- gsub(".*flag.*", "other", events_dt$event_char, ignore.case=TRUE)
+events_dt$event_char <- gsub("\\?", "other", events_dt$event_char, ignore.case=TRUE)
+events_dt$event_char <- gsub(".*no .*", "other", events_dt$event_char, ignore.case=TRUE)
+events_dt$event_char <- gsub(".*none.*", "other", events_dt$event_char, ignore.case=TRUE)
+events_dt$event_char <- gsub(".*mild.*", "other", events_dt$event_char, ignore.case=TRUE)
+events_dt$event_char <- gsub(".*other.*", "other", events_dt$event_char, ignore.case=TRUE)
+events_dt$event_char <- gsub(".*urban.*", "other", events_dt$event_char, ignore.case=TRUE)
+events_dt$event_char <- gsub(".*wall.*", "other", events_dt$event_char, ignore.case=TRUE)
+events_dt$event_char <- gsub(".*vog.*", "other", events_dt$event_char, ignore.case=TRUE)
+# ice related weather events (using freezing early catches freezing events - which result in ice)
+events_dt$event_char <- gsub(".*freezing.*", "ice", events_dt$event_char, ignore.case=TRUE)
+events_dt$event_char <- gsub(".*ice.*", "ice", events_dt$event_char, ignore.case=TRUE)
+events_dt$event_char <- gsub(".*icy.*", "ice", events_dt$event_char, ignore.case=TRUE)
+events_dt$event_char <- gsub(".*glaze.*", "ice", events_dt$event_char, ignore.case=TRUE)
+# astronomical tidal events
+events_dt$event_char <- gsub(".*tide$", "tide", events_dt$event_char, ignore.case=TRUE)
+events_dt$event_char <- gsub(".*tide.*", "tide", events_dt$event_char, ignore.case=TRUE)
+events_dt$event_char <- gsub("^tidal.*", "tide", events_dt$event_char, ignore.case=TRUE)
+# tornado related events
+events_dt$event_char <- gsub(".*torn.*", "tornado", events_dt$event_char, ignore.case=TRUE)
+events_dt$event_char <- gsub(".*funn.*", "tornado", events_dt$event_char, ignore.case=TRUE)
+events_dt$event_char <- gsub(".*spout.*", "tornado", events_dt$event_char, ignore.case=TRUE)
+# thunderstorm related events (tstm - is a NOA abbreviation for thunderstorms)
+events_dt$event_char <- gsub(".*thun.*", "thunderstorm", events_dt$event_char, ignore.case=TRUE)
+events_dt$event_char <- gsub(".*tund.*", "thunderstorm", events_dt$event_char, ignore.case=TRUE)
+events_dt$event_char <- gsub("^tstm.*", "thunderstorm", events_dt$event_char, ignore.case=TRUE)
+events_dt$event_char <- gsub(".*tstm.*", "thunderstorm", events_dt$event_char, ignore.case=TRUE)
+events_dt$event_char <- gsub(".*gustn.*", "thunderstorm", events_dt$event_char, ignore.case=TRUE)
+events_dt$event_char <- gsub(".*metro.*", "thunderstorm", events_dt$event_char, ignore.case=TRUE)
+# lightning realated weather events
+events_dt$event_char <- gsub(".*light.*", "lightning", events_dt$event_char, ignore.case=TRUE)
+events_dt$event_char <- gsub(".*ligtn.*", "lightning", events_dt$event_char, ignore.case=TRUE)
+events_dt$event_char <- gsub(".*lign.*", "lightning", events_dt$event_char, ignore.case=TRUE)
+# blizzards
+events_dt$event_char <- gsub(".*blizzard.*", "blizzard", events_dt$event_char, ignore.case=TRUE)
+# hail
+events_dt$event_char <- gsub(".*hail.*", "hail", events_dt$event_char, ignore.case=TRUE)
+# sleet 
+events_dt$event_char <- gsub(".*sleet.*", "sleet", events_dt$event_char, ignore.case=TRUE)
+# avalanches
+events_dt$event_char <- gsub("avalanc.*", "avalanche", events_dt$event_char, ignore.case=TRUE)
+# costal flooding
+events_dt$event_char <- gsub(".*coast.*", "coastal flood", events_dt$event_char, ignore.case=TRUE)
+events_dt$event_char <- gsub(".*cstl.*", "coastal flood", events_dt$event_char, ignore.case=TRUE)
+events_dt$event_char <- gsub(".*beach.*", "coastal flood", events_dt$event_char, ignore.case=TRUE)
+events_dt$event_char <- gsub(".*surge.*", "coastal flood", events_dt$event_char, ignore.case=TRUE)
+# cold and wind chill events
+events_dt$event_char <- gsub(".*cool.*", "cold", events_dt$event_char, ignore.case=TRUE)
+events_dt$event_char <- gsub(".*cold.*", "cold", events_dt$event_char, ignore.case=TRUE)
+events_dt$event_char <- gsub(".*chill.*", "cold", events_dt$event_char, ignore.case=TRUE)
+events_dt$event_char <- gsub(".*low.*", "cold", events_dt$event_char, ignore.case=TRUE)
+events_dt$event_char <- gsub(".*snow.*", "snow", events_dt$event_char, ignore.case=TRUE)
+# fog related weather events
+events_dt$event_char <- gsub(".*fog.*", "fog", events_dt$event_char, ignore.case=TRUE)
+# dust storm and dust devil weather events
+events_dt$event_char <- gsub(".*dust.*", "dust", events_dt$event_char, ignore.case=TRUE)
+# dry weather (and droughts)
+events_dt$event_char <- gsub(".*dry.*", "drought", events_dt$event_char, ignore.case=TRUE)
+events_dt$event_char <- gsub(".*excessive.*", "drought", events_dt$event_char, ignore.case=TRUE)
+events_dt$event_char <- gsub(".*drought.*", "drought", events_dt$event_char, ignore.case=TRUE)
+# heat related weather events
+events_dt$event_char <- gsub(".*heat.*", "heat", events_dt$event_char, ignore.case=TRUE)
+events_dt$event_char <- gsub(".*hot.*", "heat", events_dt$event_char, ignore.case=TRUE)
+events_dt$event_char <- gsub(".*warm.*", "heat", events_dt$event_char, ignore.case=TRUE)
+# frost related weather events
+events_dt$event_char <- gsub(".*frost.*", "frost", events_dt$event_char, ignore.case=TRUE)
+events_dt$event_char <- gsub(".*freeze.*", "frost", events_dt$event_char, ignore.case=TRUE)
+# winter storms 
+events_dt$event_char <- gsub(".*wint.*", "winter", events_dt$event_char, ignore.case=TRUE)
+# fire related events
+events_dt$event_char <- gsub(".*smoke.*", "fire", events_dt$event_char, ignore.case=TRUE)
+events_dt$event_char <- gsub(".*fire.*", "fire", events_dt$event_char, ignore.case=TRUE)
+# rain related events
+events_dt$event_char <- gsub(".*rain.*", "rain", events_dt$event_char, ignore.case=TRUE)
+events_dt$event_char <- gsub(".*mix.*", "rain", events_dt$event_char, ignore.case=TRUE)
+events_dt$event_char <- gsub(".*shower.*", "rain", events_dt$event_char, ignore.case=TRUE)
+events_dt$event_char <- gsub(".*precip.*", "rain", events_dt$event_char, ignore.case=TRUE)
+events_dt$event_char <- gsub(".*wet.*", "rain", events_dt$event_char, ignore.case=TRUE)
+# hurricane events
+events_dt$event_char <- gsub(".*hur.*", "hurricane", events_dt$event_char, ignore.case=TRUE)
+events_dt$event_char <- gsub(".*typ.*", "hurricane", events_dt$event_char, ignore.case=TRUE)
+events_dt$event_char <- gsub(".*floyd.*", "hurricane", events_dt$event_char, ignore.case=TRUE)
+# rip current events
+events_dt$event_char <- gsub(".*rip.*", "rip current", events_dt$event_char, ignore.case=TRUE)
+# tropicl depressions
+events_dt$event_char <- gsub(".*depress.*", "tropical depression", events_dt$event_char, ignore.case=TRUE)
+# tropical storms
+events_dt$event_char <- gsub(".*trop.*", "tropical storm", events_dt$event_char, ignore.case=TRUE)
+# wind events (not part of a thunderstorm)
+events_dt$event_char <- gsub(".*wind.*", "wind", events_dt$event_char, ignore.case=TRUE)
+events_dt$event_char <- gsub(".*turb.*", "wind", events_dt$event_char, ignore.case=TRUE)
+events_dt$event_char <- gsub(".*micro.*", "wind", events_dt$event_char, ignore.case=TRUE)
+events_dt$event_char <- gsub(".*wnd.*", "wind", events_dt$event_char, ignore.case=TRUE)
+events_dt$event_char <- gsub(".*burst.*", "wind", events_dt$event_char, ignore.case=TRUE)
+# flooding events
+events_dt$event_char <- gsub(".*flood.*", "flood", events_dt$event_char, ignore.case=TRUE)
+events_dt$event_char <- gsub(".*flooo.*", "flood", events_dt$event_char, ignore.case=TRUE)
+events_dt$event_char <- gsub(".*stream.*", "flood", events_dt$event_char, ignore.case=TRUE)
+events_dt$event_char <- gsub(".*water.*", "flood", events_dt$event_char, ignore.case=TRUE)
+# land, mud and other debris slides
+events_dt$event_char <- gsub(".*mud.*", "debris slide", events_dt$event_char, ignore.case=TRUE)
+events_dt$event_char <- gsub(".*rock.*", "debris slide", events_dt$event_char, ignore.case=TRUE)
+events_dt$event_char <- gsub(".*land.*", "debris slide", events_dt$event_char, ignore.case=TRUE)
+# tsunami
+events_dt$event_char <- gsub(".*tsunami.*", "tsunami", events_dt$event_char, ignore.case=TRUE)
+# volcano events
+events_dt$event_char <- gsub(".*volc.*", "volcano", events_dt$event_char, ignore.case=TRUE)
+# various wave events at sea (marine waves)
+events_dt$event_char <- gsub(".*surf.*", "marine waves", events_dt$event_char, ignore.case=TRUE)
+events_dt$event_char <- gsub(".*sea.*", "marine waves", events_dt$event_char, ignore.case=TRUE)
+events_dt$event_char <- gsub(".*sea.*", "marine waves", events_dt$event_char, ignore.case=TRUE)
+events_dt$event_char <- gsub(".*swell.*", "marine waves", events_dt$event_char, ignore.case=TRUE)
+events_dt$event_char <- gsub(".*wave.*", "marine waves", events_dt$event_char, ignore.case=TRUE)
+events_dt$event_char <- gsub(".*high.*", "marine waves", events_dt$event_char, ignore.case=TRUE)
+events_dt$event_char <- gsub(".*seiche.*", "marine waves", events_dt$event_char, ignore.case=TRUE)
+
+events_dt$event_type <- as.factor( events_dt$event_char )
+levels( events_dt$event_type )
+```
+
+now that looks reasonable -- it's slightly more simplified than NOA, it groups many related events such as rainfall events, fog events, marine events, etc.
+
+5. **Now that the levels are simplified, it will be helpful to make the damage amounts numeric (currently there is a unit and a character exponent, "K" for thousand, "M" for million and "B" for billion)**
+
+```{r calculate_cost, cache=TRUE}
+                                     
+# convert the crop damage into us dollars
+events_dt$crop_mult <- list(0)
+events_dt$crop_mult[ events_dt$CROPDMGEXP == "K" ] <- 1000
+events_dt$crop_mult[ events_dt$CROPDMGEXP == "M" ] <- 1000000
+events_dt$crop_mult[ events_dt$CROPDMGEXP == "B" ] <- 1000000000
+events_dt$crop_usd <- events_dt$CROPDMG * events_dt$crop_mult
+
+# convert the property damage into us dollars
+events_dt$property_mult <- list(0)
+events_dt$property_mult[ events_dt$PROPDMGEXP == "K" ] <- 1000
+events_dt$property_mult[ events_dt$PROPDMGEXP == "M" ] <- 1000000
+events_dt$property_mult[ events_dt$PROPDMGEXP == "B" ] <- 1000000000
+events_dt$property_usd <- events_dt$PROPDMG * events_dt$property_mult
+```
+
+6. **It will probably also be useful to know the total damages of both crop and property damages*
+
+```{r combined_damage, cache=TRUE}
+# calculate combined damage costs
+events_dt$total_usd  <- events_dt$crop_usd + events_dt$property_usd
+```
+
+7. **It will probably also be useful to know the combined deaths and injurs in an event**
+
+```{r combined_health, cache=TRUE}
+# calculate combined health effects (death and injuries)
+events_dt$health_count <- events_dt$FATALITIES + events_dt$INJURIES
+```
+
+8. **It is important to know over what time frame this data has been collected**
+
+```{r time_frame, cache=TRUE}
+# convert the begin data to extract just the year as a numeric value
+#events_dt$year <- as.numeric(format( as.Date(as.character(events$BGN_DATE), %m/%d/%Y %T), "%Y""))
+events_dt$date <-  as.Date( as.character(events_dt$BGN_DATE), format = " %m/%d/%Y %T" )
+events_dt$year <- as.numeric( format( events_dt$date, "%Y" ) )
+
+# find the most recent event year 
+max_year   = max( events_dt$year )
+max_year
+# find the oldest event year
+min_year   = min( events_dt$year )
+min_year
+# calculate the study time span
+years_span = max_year - min_year
+years_span
+```
+
+9. **Check the frequency of weather events -- is it similar over time? (are yearly averages meaningful?)
+
+```{r event_consistency, cache=TRUE}
+# understand frequency by year
+events_in_year <- as.data.frame(table(events_dt$year))
+# provide useful column names
+colnames(events_in_year)[1] <- "year"
+colnames(events_in_year)[2] <- "events_count"
+events_in_year$year <- as.numeric( as.character( events_in_year$year ) )
+
+# compare events_in_year to number of events in the original data 
+summed_by_year <- sum( events_in_year$events_count )
+summed_by_year
+events_total
+```
+
+10. **Calculate the number of occurances for each type of event**
+
+```{r event_count, cache=TRUE}
+# count each type of event
+event_count <- as.data.frame(table(events_dt$event_type))
+# provide useful column names
+colnames(event_count)[1] <- "event_type"
+colnames(event_count)[2] <- "events_count"
+
+# compare events_in_year to number of events in the original data 
+summed_by_type <- sum( events_in_year$events_count )
+summed_by_type
+events_total
+```
+
+11. **Summarize effects (HEALTH effects: deaths and injuries and DAMAGE costs: crop and property) by the simplified event types (events_dt$event_type)**
+
+```{r summarize_by_event, cache=TRUE}
+# create a summary data table of each event type with important effects summed
+effects <- events_dt[, lapply(.SD, sum, na.rm=TRUE), by="event_type", .SDcols=c("FATALITIES", "INJURIES", "property_usd", "crop_usd", "health_count", "total_usd") ]
+```
+
+12. **Calculate effect per event (intensity has not been considered in this study -- which is likely proportional to cost per event)**
+
+merge the effect datatable with the number of events per event category:
+
+```{r effect_per_event, cache=TRUE}
+# merge the effect summary with the event_count datatable
+effects <- merge(effects, event_count, by="event_type")
+
+# calculate the average effects per event
+effects$avg_health_per_event <- round( effects$health_count / effects$events_count, 2 )
+effects$avg_cost_per_event   <- round( effects$total_usd    / effects$events_count, 2 )
+```
+
+13. **Check if cost per event (probably related to event intensity -- once inflation is subtracted) is increasing -- but it can be a good way to estimate the near future expectations**
+
+```{r cost_year, cache=TRUE}
+# create a summary data table of each event type with important effects summed
+costs <- events_dt[, lapply(.SD, sum, na.rm=TRUE), by="year", .SDcols=c("FATALITIES", "INJURIES", "property_usd", "crop_usd", "health_count", "total_usd") ]
+```
+
+14. **Calculate yearly effects**
+
+```{r costs_per_year, cache=TRUE}
+# merge the effect summary with the event_count datatable
+costs <- merge(costs, events_in_year, by="year")
+
+# calculate the average effects per event
+costs$avg_health_per_event <- round( costs$health_count / costs$events_count, 2 )
+costs$avg_cost_per_event   <- round( costs$total_usd    / costs$events_count, 2 )
+```
+
+## RESULTS
+
+1. This study spans from **`r min_year`** to **`r max_year`**, a time span of **`r years_span`**.
+
+2. **The number of events each year is increasing strongly:**
+
+```{r events_per_year, cache=TRUE}
+#plot( events_in_year$year, events_in_year$events_count, 
+#      main="Weather Events over Time", 
+#      xlab="Year", ylab="Number of Events", pch=19)
+
+qplot(year, events_count, data=events_in_year, geom=c("point", "smooth"), 
+      main="Weather Events over Time", 
+      xlab="Year", ylab="Number of Events")
+```
+
+3. **The costs per event has possibly started to rise since 1990 (however, outliers have been increasing in both magnitude and frequency):**
+
+```{r costs_per_events_plot, cache=TRUE}
+#plot( costs$year, costs$avg_cost_per_event, 
+#      main="Cost per Event over Time", 
+#      xlab="Year", ylab="Cost per Events", pch=19)
+
+qplot(year, avg_cost_per_event, 
+      data=costs, geom=c("point", "smooth"), 
+      #method="lm", formula=y~x, 
+      main="Cost per Event over Time", 
+      xlab="Year", ylab="Cost per Events")
+```
+
+4. **The costs per year has started to rise since 1990 and the variation (& outlies may be increasing):**.**
+
+```{r costs_per_year_plot, cache=TRUE}
+#plot( costs$year, costs$total_usd, 
+#      main="Cost per Year over Time", 
+#      xlab="Year", ylab="US Dollars", pch=19)
+
+qplot(year, total_usd, 
+      data=costs, geom=c("point", "smooth"), 
+      #method="lm", formula=y~x, 
+      main="Cost per Year over Time", 
+      xlab="Year", ylab="US Dollars")
 
 ```
+
+More investigation would be needed, this may be due to proper preventative measures.
+
+5. **The most common events that affect health (sorted by deaths) are shown in the following table:**
+
+```{r health_sorts, cache=TRUE}
+# copy the orginal data table so that removing columns doesn't affect the original
+health <- as.data.frame(effects)
+health <- data.table(health)
+# remove costs -- and focus only on health impacts
+health[ , c("property_usd", "crop_usd", "total_usd", "avg_cost_per_event"):=NULL ]
+
+# sorting by deaths
+health_by_deaths <- health[ order( -health$FATALITIES) ]
+kable( head( health_by_deaths ) )
+# sorting by injuries
+health_by_injuries <- health[ order( -health$INJURIES) ]
+kable( head( health_by_injuries ) )
+# sorting by all health impacts
+health_per_event <- health[ order( -health$avg_health_per_event) ]
+kable( head( health_per_event ) )
+```
+
+6. **event types sorted by costs**
+
+```{r cost_sorts, cache=TRUE}
+# copy the orginal data table so that removing columns doesn't affect the original
+cost <- as.data.frame(effects)
+cost <- data.table(cost)
+# remove the health data -- just view costs
+cost[ , c("FATALITIES", "INJURIES", "health_count", "avg_health_per_event"):=NULL ] 
+
+# sort by crop damage impact
+cost_by_crop <- cost[ order( -cost$crop_usd) ]
+kable( head( cost_by_crop ) )
+# sort by property damage impact
+cost_by_property <- cost[ order( -cost$property_usd) ]
+kable( head( cost_by_property ) )
+# sort by costs per event
+cost_per_event <- cost[ order( -cost$avg_cost_per_event) ]
+kable( head( cost_per_event ) )
+```
+
+
+## Analysis Caveots
+
+* The fiscal analysis has ignored the effect of inflation.
+* Weather intensity changes over time have not been investigated.
+
+
+## Discussion, Questions and Surprises
+
+The data is summarized in the synopsis.
+
+Here I will only mention surprises:
+
+* droughts and heat were in the top 5 for health impacts -- for both injuries and deaths -- can these be prevented?
+* although weather event frequency has increased, the cost per year has not increased at a corresponding rate -- have prevention methods been extreemly effective?
+* does the increased variation in cost per year indicate an increase in the likelihoot of more intense weather events?
